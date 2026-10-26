@@ -1,38 +1,38 @@
 # Scout
 
-> A college placement and job applications platform built with React, Node.js, and PostgreSQL, featuring verified applicant tracking, dual-slot resume management, and live job aggregation.
+> A job applications platform built with the PERN stack (PostgreSQL, Express, React, Node.js), featuring live web-wide job search, applicant tracking, and dual-slot resume management.
 
 [![Frontend](https://img.shields.io/badge/Frontend-React%2018-00599C?style=flat-square&logo=react&logoColor=white)](https://react.dev/)
 [![Backend](https://img.shields.io/badge/Backend-Node.js%2022-339933?style=flat-square&logo=node.js&logoColor=white)](https://nodejs.org/)
 [![Database](https://img.shields.io/badge/Database-PostgreSQL%2016-4169E1?style=flat-square&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 [![License](https://img.shields.io/badge/License-MIT-44CC11?style=flat-square)](LICENSE)
-[![Platform](https://img.shields.io/badge/Platform-Campus%20Recruitment-orange?style=flat-square)](#)
+[![Stack](https://img.shields.io/badge/Stack-PERN-orange?style=flat-square)](#)
 
 ---
 
 ## 🎥 Live Demo
 
-> **Local Preview**: Run `npm run dev` to start both the Express API and Vite React client.  
+> **Local Preview**: Run `npm run dev` to start both the Express API and Vite React client simultaneously.  
 > **Deployment**: Ready for deployment to platforms like Vercel (Client) and Render / Railway (Backend).
 
-<!-- Tip: Drag & drop your demo MP4 or GIF directly into the GitHub README editor to embed video playback here, exactly like Huffman.File.Compressor.mp4 -->
+<!-- Tip: Drag & drop your demo MP4 or GIF directly into the GitHub README editor to embed video playback here -->
 
 ---
 
 ## 📌 Overview
 
-Scout is a full-stack campus recruitment portal designed to manage university placement drives, student eligibility filtering, and external tech job discovery.
+Scout is a full-stack job application platform designed to unite direct hiring workflows, applicant tracking, and live job aggregation across the web into a single responsive web application.
 
 The platform provides two integrated environments and an external discovery engine:
-- **Student Placement Portal**: A dashboard with real-time academic eligibility checking, application tracking, and an authenticated dual-slot PDF resume vault.
-- **Employer Management Console**: A dedicated recruitment workspace to publish campus drives, set academic cutoffs, inspect candidate profiles, and evaluate applicants.
-- **External Job Discovery Engine**: A web-wide tech job aggregator powered by a backend proxy to the JSearch RapidAPI service with built-in offline fallback.
+- **Applicant & Candidate Portal**: A clean dashboard with real-time job filtering, application tracking, profile management, and an authenticated dual-slot PDF resume vault.
+- **Employer Management Console**: A dedicated recruitment workspace to publish job openings, define applicant criteria, inspect candidate profiles, and evaluate applicants.
+- **Live Web-Wide Job Discovery Engine**: Real-time job search across the web powered by a backend proxy to the JSearch RapidAPI service with built-in offline fallback.
 
 ---
 
 ## ⚡ How It Works (System Architecture & Pipeline)
 
-A high-level view of how student applications, employer postings, and secure resume streaming move through the system:
+A high-level view of how job applications, employer postings, and live external discovery move through the system:
 
 ```
 [ Candidate / Recruiter ]
@@ -45,10 +45,10 @@ A high-level view of how student applications, employer postings, and secure res
            │
      ┌─────┴───────────────────────────┬───────────────────────────┐
      ▼                                 ▼                           ▼
-[ Auth & Security ]           [ Secure File Vault ]      [ External Discovery ]
+[ Auth & Security ]           [ Secure File Vault ]      [ Live External Search ]
  • JWT Token Verification      • Multer PDF Validation    • JSearch RapidAPI
  • Role-Based Guard (Admin)    • Disk Storage (outside    • In-memory Fallback
- • Bcrypt Password Hashing       public web root)
+ • Bcrypt Password Hashing       public web root)         • Keyword & Geo Filters
  • IDOR Ownership Checks       • Authenticated Stream
      │
      ▼
@@ -57,20 +57,25 @@ A high-level view of how student applications, employer postings, and secure res
      ▼
 [ PostgreSQL Database (Neon Serverless) ]
  • Users, Profiles & Resumes
- • Campus Jobs & Applications
+ • Job Postings & Applications
  • Application Status Records
 ```
 
-### 1. Student Application Pipeline
-- **Academic Profile Setup**: Collects college roll number, degree, branch, graduation year, aggregate CGPA, and 10th/12th percentages.
+### 1. Candidate Application Pipeline
+- **Profile & Qualifications Setup**: Collects educational background, contact details, graduation records, and academic metrics.
 - **Dual-Slot Resume Vault**: Drag-and-drop PDF upload with MIME validation, a 20 MB size ceiling, and private disk storage outside public web directories.
-- **Campus Drive Eligibility**: Compares student academic marks against job criteria (batch cutoff, minimum CGPA) before allowing submission.
-- **Real-Time Status Tracking**: Applications link directly to the student profile, updating status states (`Applied`, `Shortlisted`, `Closed`) in a live dashboard ledger.
+- **Direct Job Applications**: One-click application submission with linked profile snapshots and attached resume.
+- **Real-Time Status Tracking**: Applications link directly to the candidate profile, updating status states (`Applied`, `Shortlisted`, `Closed`) in a live dashboard ledger.
 
-### 2. Employer Drive & Recruitment Workflow
-- **Drive Creation**: Recruiters publish campus drives with role metadata, compensation figures (stipend and full-time CTC), deadlines, and eligibility criteria.
-- **Applicant Screening**: Recruiter inspects candidate academic records, contact info, and streams their attached PDF resume directly through an IDOR-protected endpoint.
+### 2. Recruiter & Hiring Workflow
+- **Job Creation**: Recruiters publish openings with role metadata, compensation ranges (stipend / full-time salary), deadlines, and eligibility criteria.
+- **Applicant Screening**: Recruiter inspects candidate qualification records, contact info, and streams their attached PDF resume directly through an IDOR-protected endpoint.
 - **Decision Management**: Recruiters toggle candidate statuses between `Shortlisted` and `Closed`, immediately updating the candidate view.
+
+### 3. Live Web Job Aggregation
+- **Global Tech Job Search**: Real-time querying across external job boards powered by the JSearch API.
+- **Search Filters**: Filter live web listings by title, location, remote work preference, and employment type (Full-time, Internship, Contract).
+- **Secure Backend Proxy**: API keys stay protected on the server side, with client-side query caching via TanStack Query.
 
 ---
 
@@ -136,12 +141,12 @@ Visit `http://localhost:5173` in your browser.
 
 | Module | Component | Implementation | Key Capabilities |
 | :--- | :--- | :--- | :--- |
-| **Authentication** | Student & Employer Auth | JWT in httpOnly Cookies + Bcrypt | Secure cookie sessions, 12 salt rounds, stateless password reset |
+| **Authentication** | User & Employer Auth | JWT in httpOnly Cookies + Bcrypt | Secure cookie sessions, 12 salt rounds, stateless password reset |
 | **Resume Engine** | Dual-Slot Resume Vault | Multer + Private Disk Storage | PDF MIME verification, 20 MB ceiling, IDOR-protected streaming |
-| **Campus Jobs** | Placement Drive Directory | Express + Prisma ORM + Postgres | Academic cutoffs, stipend/CTC packages, live search & role filters |
-| **Application Tracker** | Student Ledger | TanStack Query + React 18 | Live status badges (`Applied`, `Shortlisted`, `Closed`), duplicate prevention |
-| **Employer Console** | Recruiter Workspace | Role-Based Access Control | Candidate academic reviews, one-click PDF review, status updates |
-| **External Search** | JSearch Discovery Engine | Axios + RapidAPI Proxy | Live web-wide tech jobs, query caching, resilient offline fallback |
+| **Job Directory** | Platform Job Postings | Express + Prisma ORM + Postgres | Role requirements, compensation packages, live search & role filters |
+| **Application Tracker** | Candidate Ledger | TanStack Query + React 18 | Live status badges (`Applied`, `Shortlisted`, `Closed`), duplicate prevention |
+| **Employer Console** | Recruiter Workspace | Role-Based Access Control | Candidate qualification reviews, one-click PDF review, status updates |
+| **Live External Search** | JSearch Discovery Engine | Axios + RapidAPI Proxy | Live web-wide tech jobs, query caching, resilient offline fallback |
 | **UI & Theming** | Design System | Tailwind CSS + Lucide React | Light and dark mode persistence, accessible modal dialogues |
 
 ---
@@ -160,11 +165,11 @@ Visit `http://localhost:5173` in your browser.
 ## 🌐 Web Interface
 
 The web client runs on React 18, Vite, and Tailwind CSS:
-- **Zero-Barrier Browsing**: Public dashboard lets students explore all active campus drives without requiring an immediate login.
+- **Zero-Barrier Browsing**: Public dashboard lets candidates explore all active job openings without requiring an immediate login.
 - **Inline Application Modal**: Clicking "Apply" while logged out prompts the candidate inline, preserving search context without route redirects.
 - **Dual-Slot Resume Management**: Upload, switch between, and preview primary and secondary resumes with instant drag-and-drop feedback.
 - **Dark & Light Theme**: Supports responsive dark and light modes with localStorage persistence.
-- **Live Job Discovery**: Filter global tech jobs by role, location, remote work, and employment type.
+- **Live Job Discovery**: Filter live external tech jobs across the web by role, location, remote work, and employment type.
 
 ---
 
