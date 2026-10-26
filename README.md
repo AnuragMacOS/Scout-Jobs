@@ -1,7 +1,26 @@
 # Scout
-A college placement and job applications platform built with React, Node.js, and PostgreSQL, featuring verified applicant tracking, dual-slot resume management, and live job aggregation.
 
-📌 Overview
+> A college placement and job applications platform built with React, Node.js, and PostgreSQL, featuring verified applicant tracking, dual-slot resume management, and live job aggregation.
+
+[![Frontend](https://img.shields.io/badge/Frontend-React%2018-00599C?style=flat-square&logo=react&logoColor=white)](https://react.dev/)
+[![Backend](https://img.shields.io/badge/Backend-Node.js%2022-339933?style=flat-square&logo=node.js&logoColor=white)](https://nodejs.org/)
+[![Database](https://img.shields.io/badge/Database-PostgreSQL%2016-4169E1?style=flat-square&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![License](https://img.shields.io/badge/License-MIT-44CC11?style=flat-square)](LICENSE)
+[![Platform](https://img.shields.io/badge/Platform-Campus%20Recruitment-orange?style=flat-square)](#)
+
+---
+
+## 🎥 Live Demo
+
+> **Local Preview**: Run `npm run dev` to start both the Express API and Vite React client.  
+> **Deployment**: Ready for deployment to platforms like Vercel (Client) and Render / Railway (Backend).
+
+<!-- Tip: Drag & drop your demo MP4 or GIF directly into the GitHub README editor to embed video playback here, exactly like Huffman.File.Compressor.mp4 -->
+
+---
+
+## 📌 Overview
+
 Scout is a full-stack campus recruitment portal designed to manage university placement drives, student eligibility filtering, and external tech job discovery.
 
 The platform provides two integrated environments and an external discovery engine:
@@ -11,7 +30,7 @@ The platform provides two integrated environments and an external discovery engi
 
 ---
 
-⚡ How It Works (System Architecture & Pipeline)
+## ⚡ How It Works (System Architecture & Pipeline)
 
 A high-level view of how student applications, employer postings, and secure resume streaming move through the system:
 
@@ -55,7 +74,7 @@ A high-level view of how student applications, employer postings, and secure res
 
 ---
 
-🚀 Getting Started
+## 🚀 Getting Started
 
 ### Prerequisites
 - Node.js (v18 or higher)
@@ -113,7 +132,7 @@ Visit `http://localhost:5173` in your browser.
 
 ---
 
-📊 Platform Capabilities & Technical Specifications
+## 📊 Platform Capabilities & Technical Specifications
 
 | Module | Component | Implementation | Key Capabilities |
 | :--- | :--- | :--- | :--- |
@@ -127,7 +146,7 @@ Visit `http://localhost:5173` in your browser.
 
 ---
 
-🔒 Security & Data Integrity
+## 🔒 Security & Data Integrity
 
 - **Session Isolation**: Signed JWT tokens stored in strict httpOnly cookies (`scout_token`), neutralizing XSS token theft.
 - **IDOR Protection**: Database queries verify ownership before any resume download or application mutation executes.
@@ -138,7 +157,7 @@ Visit `http://localhost:5173` in your browser.
 
 ---
 
-🌐 Web Interface
+## 🌐 Web Interface
 
 The web client runs on React 18, Vite, and Tailwind CSS:
 - **Zero-Barrier Browsing**: Public dashboard lets students explore all active campus drives without requiring an immediate login.
@@ -149,7 +168,7 @@ The web client runs on React 18, Vite, and Tailwind CSS:
 
 ---
 
-📂 Project Structure
+## 📂 Project Structure
 
 ```
 Scout/
@@ -184,6 +203,7 @@ Scout/
 │   ├── uploads/                # Private file storage for candidate resumes
 │   └── package.json            # Server dependencies and scripts
 ├── dev.js                      # Multi-service development process runner
+├── LICENSE                     # MIT License
 ├── package.json                # Root workspace configuration
 └── README.md                   # Project documentation
 ```
