@@ -1,0 +1,13 @@
+{
+  "name": "scout-workspace",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Scout - College Placement & Job Applications Platform",
+  "scripts": {
+    "dev": "node dev.js",
+    "dev:server": "npm --prefix server run dev",
+    "dev:client": "npm --prefix client run dev",
+    "build": "npm --prefix client run build",
+    "prisma:generate": "npm --prefix server run prisma:generate"
+  }
+}
