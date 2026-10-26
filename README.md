@@ -1,6 +1,6 @@
 # Scout
 
-> A job applications platform built with the PERN stack (PostgreSQL, Express, React, Node.js), featuring live web-wide job search, applicant tracking, and dual-slot resume management.
+> A job applications platform built with the PERN stack (PostgreSQL, Express, React, Node.js), featuring live web-wide job search, applicant tracking, and recruitment management.
 
 [![Frontend](https://img.shields.io/badge/Frontend-React%2018-00599C?style=flat-square&logo=react&logoColor=white)](https://react.dev/)
 [![Backend](https://img.shields.io/badge/Backend-Node.js%2022-339933?style=flat-square&logo=node.js&logoColor=white)](https://nodejs.org/)
@@ -24,7 +24,7 @@
 Scout is a full-stack job application platform designed to unite direct hiring workflows, applicant tracking, and live job aggregation across the web into a single responsive web application.
 
 The platform provides two integrated environments and an external discovery engine:
-- **Applicant & Candidate Portal**: A clean dashboard with real-time job filtering, application tracking, profile management, and an authenticated dual-slot PDF resume vault.
+- **Applicant & Candidate Portal**: A clean dashboard with real-time job filtering, application tracking, profile management, and an authenticated PDF resume vault.
 - **Employer Management Console**: A dedicated recruitment workspace to publish job openings, define applicant criteria, inspect candidate profiles, and evaluate applicants.
 - **Live Web-Wide Job Discovery Engine**: Real-time job search across the web powered by a backend proxy to the JSearch RapidAPI service with built-in offline fallback.
 
@@ -63,7 +63,7 @@ A high-level view of how job applications, employer postings, and live external 
 
 ### 1. Candidate Application Pipeline
 - **Profile & Qualifications Setup**: Collects educational background, contact details, graduation records, and academic metrics.
-- **Dual-Slot Resume Vault**: Drag-and-drop PDF upload with MIME validation, a 20 MB size ceiling, and private disk storage outside public web directories.
+- **Resume Vault**: Drag-and-drop PDF upload with MIME validation, a 20 MB size ceiling, and private disk storage outside public web directories.
 - **Direct Job Applications**: One-click application submission with linked profile snapshots and attached resume.
 - **Real-Time Status Tracking**: Applications link directly to the candidate profile, updating status states (`Applied`, `Shortlisted`, `Closed`) in a live dashboard ledger.
 
@@ -142,7 +142,7 @@ Visit `http://localhost:5173` in your browser.
 | Module | Component | Implementation | Key Capabilities |
 | :--- | :--- | :--- | :--- |
 | **Authentication** | User & Employer Auth | JWT in httpOnly Cookies + Bcrypt | Secure cookie sessions, 12 salt rounds, stateless password reset |
-| **Resume Engine** | Dual-Slot Resume Vault | Multer + Private Disk Storage | PDF MIME verification, 20 MB ceiling, IDOR-protected streaming |
+| **Resume Engine** | Secure Resume Vault | Multer + Private Disk Storage | PDF MIME verification, 20 MB ceiling, IDOR-protected streaming |
 | **Job Directory** | Platform Job Postings | Express + Prisma ORM + Postgres | Role requirements, compensation packages, live search & role filters |
 | **Application Tracker** | Candidate Ledger | TanStack Query + React 18 | Live status badges (`Applied`, `Shortlisted`, `Closed`), duplicate prevention |
 | **Employer Console** | Recruiter Workspace | Role-Based Access Control | Candidate qualification reviews, one-click PDF review, status updates |
@@ -167,7 +167,7 @@ Visit `http://localhost:5173` in your browser.
 The web client runs on React 18, Vite, and Tailwind CSS:
 - **Zero-Barrier Browsing**: Public dashboard lets candidates explore all active job openings without requiring an immediate login.
 - **Inline Application Modal**: Clicking "Apply" while logged out prompts the candidate inline, preserving search context without route redirects.
-- **Dual-Slot Resume Management**: Upload, switch between, and preview primary and secondary resumes with instant drag-and-drop feedback.
+- **Resume Management**: Upload, preview, and update candidate resumes with instant drag-and-drop feedback.
 - **Dark & Light Theme**: Supports responsive dark and light modes with localStorage persistence.
 - **Live Job Discovery**: Filter live external tech jobs across the web by role, location, remote work, and employment type.
 
