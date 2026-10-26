@@ -207,7 +207,8 @@ Scout/
 │   │   └── index.js            # Express server initialization
 │   ├── uploads/                # Private file storage for candidate resumes
 │   └── package.json            # Server dependencies and scripts
-├── dev.js                      # Multi-service development process runner
+├── scripts/
+│   └── dev.js                  # Multi-service development process runner
 ├── LICENSE                     # MIT License
 ├── package.json                # Root workspace configuration
 └── README.md                   # Project documentation

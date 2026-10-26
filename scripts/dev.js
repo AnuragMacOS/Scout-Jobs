@@ -1,7 +1,7 @@
 const { spawn } = require('child_process');
 const path = require('path');
 
-const rootDir = __dirname;
+const rootDir = path.resolve(__dirname, '..');
 
 function runService(name, cwd, command, args, color) {
   const child = spawn(command, args, {
