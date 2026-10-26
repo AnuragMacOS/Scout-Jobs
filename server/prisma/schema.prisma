@@ -1,0 +1,101 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String        @id @default(uuid())
+  firstName      String        @map("first_name")
+  lastName       String        @map("last_name")
+  email          String        @unique
+  passwordHash   String        @map("password_hash")
+  rollNo         String?       @map("roll_no")
+  gender         String?
+  abcId          String?       @map("abc_id")
+  mobile         String?
+  dateOfBirth    DateTime?     @map("date_of_birth")
+  graduationYear Int?          @map("graduation_year")
+  role           String        @default("student") // "student" | "admin"
+  createdAt      DateTime      @default(now()) @map("created_at")
+
+  academicInfo   AcademicInfo?
+  resumes        Resume[]
+  applications   Application[]
+  postedJobs     Job[]         @relation("AdminPostedJobs")
+
+  @@map("users")
+}
+
+model AcademicInfo {
+  id                String  @id @default(uuid())
+  userId            String  @unique @map("user_id")
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  universityName    String? @map("university_name")
+  yearOfGraduation  Int?    @map("year_of_graduation")
+  course            String?
+  branch            String?
+  aggregateCgpa     Float?  @map("aggregate_cgpa")
+  tenthPercentage   Float?  @map("tenth_percentage")
+  twelfthPercentage Float?  @map("twelfth_percentage")
+
+  @@map("academic_info")
+}
+
+model Resume {
+  id               String        @id @default(uuid())
+  userId           String        @map("user_id")
+  user             User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  slotNumber       Int           @map("slot_number") // 1 or 2
+  fileUrl          String        @map("file_url")
+  originalFilename String        @map("original_filename")
+  uploadedAt       DateTime      @default(now()) @map("uploaded_at")
+
+  applications     Application[]
+
+  @@unique([userId, slotNumber])
+  @@map("resumes")
+}
+
+model Job {
+  id                   String        @id @default(uuid())
+  postedBy             String        @map("posted_by")
+  poster               User          @relation("AdminPostedJobs", fields: [postedBy], references: [id])
+  title                String
+  companyName          String        @map("company_name")
+  companyLogoUrl       String?       @map("company_logo_url")
+  location             String
+  jobType              String        @map("job_type") // FTE | INTERN | SIX_MONTH_INTERN_FTE | PPO
+  batchYear            Int           @map("batch_year")
+  minBtechCgpa         Float?        @map("min_btech_cgpa")
+  minMtechCgpa         Float?        @map("min_mtech_cgpa")
+  minTenthPct          Float?        @map("min_tenth_pct")
+  minTwelfthPct        Float?        @map("min_twelfth_pct")
+  internStipendMonthly Int?          @map("intern_stipend_monthly")
+  fteCtcLpa            Int?          @map("fte_ctc_lpa")
+  description          String        @db.Text
+  status               String        @default("open") // open | closed
+  createdAt            DateTime      @default(now()) @map("created_at")
+
+  applications         Application[]
+
+  @@map("jobs")
+}
+
+model Application {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jobId     String   @map("job_id")
+  job       Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  resumeId  String?  @map("resume_id")
+  resume    Resume?  @relation(fields: [resumeId], references: [id], onDelete: SetNull)
+  status    String   @default("applied") // applied | shortlisted | rejected
+  appliedAt DateTime @default(now()) @map("applied_at")
+
+  @@unique([userId, jobId])
+  @@map("applications")
+}
