@@ -11,6 +11,7 @@ const env = {
   ADMIN_PASSWORD: process.env.ADMIN_PASSWORD || 'admin12345',
   CLIENT_URL: process.env.CLIENT_URL || 'http://localhost:5173',
   RAPIDAPI_KEY: process.env.RAPIDAPI_KEY || '',
+  GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID || '',
   NODE_ENV: process.env.NODE_ENV || 'development',
 };
 

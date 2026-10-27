@@ -88,8 +88,8 @@ A high-level view of how job applications, employer postings, and live external 
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/AnuragMacOS/Scout.git
-cd Scout
+git clone https://github.com/AnuragMacOS/Scout-Jobs.git
+cd Scout-Jobs
 ```
 
 ### 2. Environment Configuration
@@ -104,11 +104,13 @@ JWT_SECRET="your-secure-jwt-secret-key"
 ADMIN_EMAIL="admin@scout.app"
 ADMIN_PASSWORD="adminpassword123"
 RAPIDAPI_KEY=""
+GOOGLE_CLIENT_ID="your-google-oauth-client-id"
 ```
 
 Frontend (`client/.env`):
 ```env
 VITE_API_URL="http://localhost:5001/api"
+VITE_GOOGLE_CLIENT_ID="your-google-oauth-client-id"
 ```
 
 ### 3. Database Migration & Prisma Setup
@@ -141,7 +143,7 @@ Visit `http://localhost:5173` in your browser.
 
 | Module | Component | Implementation | Key Capabilities |
 | :--- | :--- | :--- | :--- |
-| **Authentication** | User & Employer Auth | JWT in httpOnly Cookies + Bcrypt | Secure cookie sessions, 12 salt rounds, stateless password reset |
+| **Authentication** | User & Employer Auth | Google OAuth 2.0 + JWT Cookies + Bcrypt | Google Identity Services popup, secure cookie sessions, 12 salt rounds, stateless password reset |
 | **Resume Engine** | Secure Resume Vault | Multer + Private Disk Storage | PDF MIME verification, 20 MB ceiling, IDOR-protected streaming |
 | **Job Directory** | Platform Job Postings | Express + Prisma ORM + Postgres | Role requirements, compensation packages, live search & role filters |
 | **Application Tracker** | Candidate Ledger | TanStack Query + React 18 | Live status badges (`Applied`, `Shortlisted`, `Closed`), duplicate prevention |
@@ -176,13 +178,13 @@ The web client runs on React 18, Vite, and Tailwind CSS:
 ## 📂 Project Structure
 
 ```
-Scout/
-├── client/                     # Frontend client application
+Scout-Jobs/
+├── client/                     # Frontend client application (React 18 + Vite + Tailwind)
 │   ├── src/
 │   │   ├── api/                # Axios API service clients (auth, jobs, resumes)
 │   │   ├── assets/             # Images, static logos, and illustrations
 │   │   ├── components/         # Reusable UI components
-│   │   │   ├── forms/          # Authentication & application modals
+│   │   │   ├── forms/          # Google Sign-In & application forms
 │   │   │   ├── job/            # Job cards, eligibility badges, detail modals
 │   │   │   ├── layout/         # Navigation bar, footer, theme switcher
 │   │   │   └── ui/             # Core UI primitives (buttons, inputs, cards)
@@ -191,13 +193,15 @@ Scout/
 │   │   ├── pages/              # Routed views (Dashboard, Jobs, Profile, Admin)
 │   │   ├── App.jsx             # Router layout & route definitions
 │   │   └── main.jsx            # React root mount point
-│   ├── index.html              # HTML entry point with DM Sans font
+│   ├── index.html              # HTML entry point with DM Sans font & Google GIS SDK
 │   ├── package.json            # Client dependencies and scripts
 │   └── vite.config.js          # Vite build and development configuration
-├── server/                     # Backend API server
+├── server/                     # Backend API server (Express + Prisma + PostgreSQL)
 │   ├── prisma/
 │   │   ├── schema.prisma       # Database schema (PostgreSQL)
 │   │   └── migrations/         # Prisma migration history
+│   ├── scripts/
+│   │   └── dev.js              # Multi-service development process runner
 │   ├── src/
 │   │   ├── config/             # Database connection & environment configuration
 │   │   ├── controllers/        # Route controllers (auth, jobs, applications)
@@ -207,8 +211,6 @@ Scout/
 │   │   └── index.js            # Express server initialization
 │   ├── uploads/                # Private file storage for candidate resumes
 │   └── package.json            # Server dependencies and scripts
-├── scripts/
-│   └── dev.js                  # Multi-service development process runner
 ├── LICENSE                     # MIT License
 ├── package.json                # Root workspace configuration
 └── README.md                   # Project documentation

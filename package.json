@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "description": "Scout - College Placement & Job Applications Platform",
   "scripts": {
-    "dev": "node scripts/dev.js",
+    "dev": "node server/scripts/dev.js",
     "dev:server": "npm --prefix server run dev",
     "dev:client": "npm --prefix client run dev",
     "build": "npm --prefix client run build",

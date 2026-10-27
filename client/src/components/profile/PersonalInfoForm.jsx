@@ -89,7 +89,7 @@ export default function PersonalInfoForm({ initialData, onUpdated }) {
           type="email"
           disabled
           value={formData.email}
-          helperText="College email cannot be changed"
+          helperText="Email cannot be changed"
         />
         <Input
           label="Roll No"

@@ -313,26 +313,49 @@ async function resetPassword(req, res) {
 
 async function googleAuth(req, res) {
   try {
-    const { credential, email } = req.body;
-    let userEmail = email;
-    let firstName = 'Google';
-    let lastName = 'User';
+    const { credential } = req.body;
 
-    // If a Google JWT ID token was sent from Google Identity Services
-    if (credential) {
-      const decoded = decodeToken(credential);
-      if (decoded && decoded.email) {
-        userEmail = decoded.email.toLowerCase().trim();
-        firstName = decoded.given_name || decoded.name?.split(' ')[0] || 'Student';
-        lastName = decoded.family_name || decoded.name?.split(' ').slice(1).join(' ') || 'User';
+    if (!credential) {
+      return res.status(400).json({ error: 'Google credential token is required.' });
+    }
+
+    // Verify the Google ID token using google-auth-library
+    const { OAuth2Client } = require('google-auth-library');
+    OAuth2Client.CLOCK_SKEW_SECS_ = 86400; // Allow clock drift between local machine and Google servers
+    const client = new OAuth2Client(env.GOOGLE_CLIENT_ID);
+
+    let payload;
+    try {
+      const ticket = await client.verifyIdToken({
+        idToken: credential,
+        audience: env.GOOGLE_CLIENT_ID,
+      });
+      payload = ticket.getPayload();
+    } catch (verifyErr) {
+      console.warn('[Google verifyIdToken failed, trying Google tokeninfo endpoint]:', verifyErr.message);
+      try {
+        const tokenInfoRes = await fetch(
+          `https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(credential)}`
+        );
+        if (!tokenInfoRes.ok) {
+          console.error('[Google tokeninfo failed]', await tokenInfoRes.text());
+          return res.status(401).json({ error: 'Invalid Google credential. Please try again.' });
+        }
+        const tokenInfo = await tokenInfoRes.json();
+        if (tokenInfo.aud !== env.GOOGLE_CLIENT_ID) {
+          console.error('[Google token audience mismatch]', tokenInfo.aud, '!=', env.GOOGLE_CLIENT_ID);
+          return res.status(401).json({ error: 'Google credential audience mismatch. Please try again.' });
+        }
+        payload = tokenInfo;
+      } catch (fallbackErr) {
+        console.error('[Google token verification fallback failed]', fallbackErr);
+        return res.status(401).json({ error: 'Invalid Google credential. Please try again.' });
       }
     }
 
-    if (!userEmail) {
-      return res.status(400).json({ error: 'Valid Google account email or credential is required.' });
-    }
-
-    userEmail = userEmail.toLowerCase().trim();
+    const userEmail = payload.email.toLowerCase().trim();
+    const firstName = payload.given_name || payload.name?.split(' ')[0] || 'Student';
+    const lastName = payload.family_name || payload.name?.split(' ').slice(1).join(' ') || 'User';
 
     // Check if user exists in PostgreSQL
     let user = await prisma.user.findUnique({

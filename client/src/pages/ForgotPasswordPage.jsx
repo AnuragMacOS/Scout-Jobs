@@ -97,7 +97,7 @@ export default function ForgotPasswordPage() {
             <Input
               label="Registered Email *"
               type="email"
-              placeholder="student@college.edu"
+              placeholder="you@example.com"
               icon={Mail}
               required
               value={email}
