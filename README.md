@@ -19,6 +19,8 @@
 
 ---
 
+Live Link : https://scout-jobss.vercel.app
+
 ## 📌 Overview
 
 Scout is a full-stack job application platform designed to unite direct hiring workflows, applicant tracking, and live job aggregation across the web into a single responsive web application.
