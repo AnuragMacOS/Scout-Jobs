@@ -4,6 +4,14 @@ const authController = require('../controllers/auth.controller');
 const requireAuth = require('../middleware/requireAuth');
 
 const router = express.Router();
+const env = require('../config/env');
+
+// Public config endpoint for client OAuth
+router.get('/config', (req, res) => {
+  res.json({
+    googleClientId: env.GOOGLE_CLIENT_ID || '',
+  });
+});
 
 // Rate limiter for auth endpoints: 10 requests per minute per IP
 const authLimiter = rateLimit({

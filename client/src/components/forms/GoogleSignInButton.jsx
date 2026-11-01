@@ -2,8 +2,9 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { Loader2 } from 'lucide-react';
+import api from '../../api/axios';
 
-const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+const STATIC_GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
 
 export default function GoogleSignInButton({
   text = 'continue_with',
@@ -17,9 +18,27 @@ export default function GoogleSignInButton({
   const containerRef = useRef(null);
   const buttonRef = useRef(null);
   const hasInitializedRef = useRef(false);
+  const [clientId, setClientId] = useState(STATIC_GOOGLE_CLIENT_ID);
   const [isLoaded, setIsLoaded] = useState(false);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+
+  // Fetch client ID from server config if not bundled at build time
+  useEffect(() => {
+    if (clientId) return;
+    let isSubscribed = true;
+    api
+      .get('/auth/config')
+      .then((res) => {
+        if (isSubscribed && res.data?.googleClientId) {
+          setClientId(res.data.googleClientId);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      isSubscribed = false;
+    };
+  }, [clientId]);
 
   const handleCredentialResponse = useCallback(
     async (response) => {
@@ -56,7 +75,7 @@ export default function GoogleSignInButton({
   );
 
   const renderGoogleButton = useCallback(() => {
-    if (!buttonRef.current || !window.google?.accounts?.id || !GOOGLE_CLIENT_ID) {
+    if (!buttonRef.current || !window.google?.accounts?.id || !clientId) {
       return false;
     }
 
@@ -67,7 +86,7 @@ export default function GoogleSignInButton({
 
       if (!hasInitializedRef.current) {
         window.google.accounts.id.initialize({
-          client_id: GOOGLE_CLIENT_ID,
+          client_id: clientId,
           callback: handleCredentialResponse,
           auto_select: false,
           cancel_on_tap_outside: true,
@@ -94,7 +113,7 @@ export default function GoogleSignInButton({
       console.error('[Google GIS render error]', e);
       return false;
     }
-  }, [handleCredentialResponse, text]);
+  }, [handleCredentialResponse, text, clientId]);
 
   // Initial load and script polling
   useEffect(() => {

@@ -5,11 +5,38 @@ const path = require('path');
 const env = require('./config/env');
 
 const app = express();
+const fs = require('fs');
+
+// Trust reverse proxies (Render, Vercel, Cloudflare) for secure cookies
+app.set('trust proxy', 1);
 
 // Security & Parsing Middleware
 app.use(
   cors({
-    origin: [env.CLIENT_URL, 'http://localhost:5173', 'http://127.0.0.1:5173'],
+    origin: (origin, callback) => {
+      // Allow requests with no origin (mobile apps, server-to-server, curl)
+      if (!origin) return callback(null, true);
+
+      const clientUrl = (env.CLIENT_URL || '').replace(/\/$/, '');
+      const allowedOrigins = [
+        clientUrl,
+        'http://localhost:5173',
+        'http://127.0.0.1:5173',
+        'http://localhost:5001',
+      ].filter(Boolean);
+
+      // Allow configured client URL, localhost, Render, and Vercel domains
+      if (
+        allowedOrigins.includes(origin) ||
+        origin.endsWith('.onrender.com') ||
+        origin.endsWith('.vercel.app')
+      ) {
+        return callback(null, origin);
+      }
+
+      // Default fallback
+      return callback(null, origin);
+    },
     credentials: true,
   })
 );
@@ -47,10 +74,22 @@ app.use('/api/profile', profileRoutes);
 app.use('/api/resumes', resumesRoutes);
 app.use('/api/external-jobs', externalJobsRoutes);
 
-// 404 handler
-app.use((req, res, next) => {
-  res.status(404).json({ message: `Route not found: ${req.method} ${req.originalUrl}` });
-});
+// Serve static client assets in production if client build exists
+const clientDist = path.join(__dirname, '../../client/dist');
+if (fs.existsSync(clientDist)) {
+  app.use(express.static(clientDist));
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api')) {
+      return res.status(404).json({ message: `Route not found: ${req.method} ${req.originalUrl}` });
+    }
+    res.sendFile(path.join(clientDist, 'index.html'));
+  });
+} else {
+  // 404 handler for API-only deployment
+  app.use((req, res) => {
+    res.status(404).json({ message: `Route not found: ${req.method} ${req.originalUrl}` });
+  });
+}
 
 // Centralized error handler
 app.use((err, req, res, next) => {

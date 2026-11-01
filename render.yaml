@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: scout-jobs
+    env: node
+    plan: free
+    region: oregon
+    buildCommand: npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: RAPIDAPI_KEY
+        sync: false
+      - key: ADMIN_EMAIL
+        value: admin@scout.app
+      - key: ADMIN_PASSWORD
+        generateValue: true
