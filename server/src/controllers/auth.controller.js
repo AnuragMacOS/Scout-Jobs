@@ -73,6 +73,7 @@ async function signup(req, res) {
     res.status(201).json({
       message: 'Account created successfully',
       user,
+      token,
     });
   } catch (err) {
     if (err instanceof z.ZodError) {
@@ -121,6 +122,7 @@ async function login(req, res) {
     res.json({
       message: 'Logged in successfully',
       user: safeUser,
+      token,
     });
   } catch (err) {
     if (err instanceof z.ZodError) {
@@ -417,6 +419,7 @@ async function googleAuth(req, res) {
     res.json({
       message: 'Signed in with Google successfully',
       user: safeUser,
+      token,
     });
   } catch (err) {
     console.error('[Google auth error]', err);

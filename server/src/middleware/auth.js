@@ -2,7 +2,17 @@ const { verifyToken, COOKIE_NAME } = require('../utils/jwt');
 
 function authMiddleware(req, res, next) {
   try {
-    const token = req.cookies[COOKIE_NAME];
+    let token = req.cookies?.[COOKIE_NAME];
+
+    // Support Authorization: Bearer <token> for cross-origin deployments (e.g. Vercel frontend <-> Render backend)
+    // where browsers enforce strict third-party cookie blocking
+    if (!token && req.headers?.authorization) {
+      const parts = req.headers.authorization.split(' ');
+      if (parts.length === 2 && parts[0] === 'Bearer') {
+        token = parts[1];
+      }
+    }
+
     if (!token) {
       req.user = null;
       return next();

@@ -37,18 +37,27 @@ export function AuthProvider({ children }) {
 
   const login = async (credentials) => {
     const data = await apiLogin(credentials);
+    if (data?.token) {
+      localStorage.setItem('scout_token', data.token);
+    }
     setUser(data.user);
     return data;
   };
 
   const signup = async (userData) => {
     const data = await apiSignup(userData);
+    if (data?.token) {
+      localStorage.setItem('scout_token', data.token);
+    }
     setUser(data.user);
     return data;
   };
 
   const loginWithGoogle = async (payload) => {
     const data = await apiGoogleLogin(payload);
+    if (data?.token) {
+      localStorage.setItem('scout_token', data.token);
+    }
     setUser(data.user);
     return data;
   };
@@ -57,6 +66,7 @@ export function AuthProvider({ children }) {
     try {
       await apiLogout();
     } finally {
+      localStorage.removeItem('scout_token');
       setUser(null);
     }
   };
