@@ -43,14 +43,16 @@ export default function FindJobsPage() {
   const [activeQuery, setActiveQuery] = useState('Software Engineer in India');
   const [remote, setRemote] = useState('false');
   const [datePosted, setDatePosted] = useState('all');
+  const [freshersOnly, setFreshersOnly] = useState('false');
 
   const { data, isLoading, isFetching, isError, refetch } = useQuery({
-    queryKey: ['externalJobs', activeQuery, remote, datePosted],
+    queryKey: ['externalJobs', activeQuery, remote, datePosted, freshersOnly],
     queryFn: () =>
       searchExternalJobs({
         q: activeQuery,
         remote,
         datePosted,
+        freshers: freshersOnly,
       }),
     staleTime: 5 * 60 * 1000,
     retry: 1,
@@ -154,7 +156,7 @@ export default function FindJobsPage() {
       </div>
 
       {/* Compact Filters */}
-      <div className="flex items-center justify-center gap-2 mb-8">
+      <div className="flex flex-wrap items-center justify-center gap-2 mb-8">
         <select
           value={datePosted}
           onChange={(e) => setDatePosted(e.target.value)}
@@ -164,7 +166,6 @@ export default function FindJobsPage() {
           <option value="today">Past 24 hours</option>
           <option value="3days">Past 3 days</option>
           <option value="week">Past week</option>
-          <option value="month">Past month</option>
         </select>
 
         <button
@@ -177,6 +178,18 @@ export default function FindJobsPage() {
           }`}
         >
           {remote === 'true' ? 'Remote: Yes ✓' : 'Remote only'}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setFreshersOnly(freshersOnly === 'true' ? 'false' : 'true')}
+          className={`text-xs font-medium py-1.5 px-3 rounded-lg border transition-colors shadow-sm cursor-pointer ${
+            freshersOnly === 'true'
+              ? 'bg-blue-600 text-white border-blue-600 font-semibold'
+              : 'bg-white dark:bg-zinc-900 text-ink dark:text-zinc-200 border-border dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800'
+          }`}
+        >
+          {freshersOnly === 'true' ? 'Freshers: Yes ✓' : 'Freshers / Entry Level'}
         </button>
 
         {loading && (
@@ -355,6 +368,7 @@ export default function FindJobsPage() {
             setActiveQuery('Software Engineer in India');
             setRemote('false');
             setDatePosted('all');
+            setFreshersOnly('false');
           }}
         />
       )}

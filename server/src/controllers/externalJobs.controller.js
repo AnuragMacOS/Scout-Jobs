@@ -178,10 +178,10 @@ const SAMPLE_EXTERNAL_JOBS = [
 ];
 
 async function searchExternalJobs(req, res) {
-  const { q = 'Software Engineer in India', page = 1, type, remote, datePosted } = req.query;
+  const { q = 'Software Engineer in India', page = 1, type, remote, datePosted, freshers } = req.query;
 
   const rawQuery = (q || 'Software Engineer').trim();
-  const cacheKey = `${rawQuery.toLowerCase()}:${remote || 'false'}:${type || 'all'}:${datePosted || 'all'}:${page}`;
+  const cacheKey = `${rawQuery.toLowerCase()}:${remote || 'false'}:${type || 'all'}:${datePosted || 'all'}:${freshers || 'false'}:${page}`;
 
   // 1. Check in-memory cache first to save RapidAPI quota and speed up duplicate queries
   const cached = searchCache.get(cacheKey);
@@ -210,6 +210,9 @@ async function searchExternalJobs(req, res) {
     if (remote === 'true') {
       queryStr += ' remote';
     }
+    if (freshers === 'true' && !lower.includes('fresher') && !lower.includes('entry') && !lower.includes('intern') && !lower.includes('graduate')) {
+      queryStr += ' fresher entry level';
+    }
 
     const params = {
       query: queryStr,
@@ -218,6 +221,7 @@ async function searchExternalJobs(req, res) {
       employment_types: type || undefined,
       date_posted: datePosted && datePosted !== 'all' ? datePosted : 'all',
       country: 'in',
+      job_requirements: freshers === 'true' ? 'no_experience' : undefined,
     };
 
     const headers = {
@@ -304,6 +308,23 @@ async function searchExternalJobs(req, res) {
   // Apply remote filter
   if (remote === 'true') {
     results = results.filter((job) => job.job_is_remote);
+  }
+
+  // Apply freshers / entry level filter
+  if (freshers === 'true') {
+    const fresherFriendly = results.filter((job) => {
+      const titleAndDesc = `${job.job_title} ${job.job_description}`.toLowerCase();
+      const isIntern = job.job_employment_type?.toUpperCase() === 'INTERN';
+      const hasFresherTerms = [
+        'fresher', 'entry', 'graduate', 'intern', 'sde 1', 'sde i',
+        'junior', 'trainee', 'associate', 'campus'
+      ].some((k) => titleAndDesc.includes(k));
+      return isIntern || hasFresherTerms;
+    });
+
+    if (fresherFriendly.length > 0) {
+      results = fresherFriendly;
+    }
   }
 
   // Apply keyword relevance matching
