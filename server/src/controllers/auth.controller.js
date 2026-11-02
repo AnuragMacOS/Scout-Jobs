@@ -313,43 +313,61 @@ async function resetPassword(req, res) {
 
 async function googleAuth(req, res) {
   try {
-    const { credential } = req.body;
+    const { credential, access_token } = req.body;
 
-    if (!credential) {
-      return res.status(400).json({ error: 'Google credential token is required.' });
+    if (!credential && !access_token) {
+      return res.status(400).json({ error: 'Google credential or access token is required.' });
     }
 
-    // Verify the Google ID token using google-auth-library
-    const { OAuth2Client } = require('google-auth-library');
-    OAuth2Client.CLOCK_SKEW_SECS_ = 86400; // Allow clock drift between local machine and Google servers
-    const client = new OAuth2Client(env.GOOGLE_CLIENT_ID);
-
     let payload;
-    try {
-      const ticket = await client.verifyIdToken({
-        idToken: credential,
-        audience: env.GOOGLE_CLIENT_ID,
-      });
-      payload = ticket.getPayload();
-    } catch (verifyErr) {
-      console.warn('[Google verifyIdToken failed, trying Google tokeninfo endpoint]:', verifyErr.message);
+
+    if (credential) {
+      // Verify the Google ID token using google-auth-library
+      const { OAuth2Client } = require('google-auth-library');
+      OAuth2Client.CLOCK_SKEW_SECS_ = 86400; // Allow clock drift between local machine and Google servers
+      const client = new OAuth2Client(env.GOOGLE_CLIENT_ID);
+
       try {
-        const tokenInfoRes = await fetch(
-          `https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(credential)}`
-        );
-        if (!tokenInfoRes.ok) {
-          console.error('[Google tokeninfo failed]', await tokenInfoRes.text());
+        const ticket = await client.verifyIdToken({
+          idToken: credential,
+          audience: env.GOOGLE_CLIENT_ID,
+        });
+        payload = ticket.getPayload();
+      } catch (verifyErr) {
+        console.warn('[Google verifyIdToken failed, trying Google tokeninfo endpoint]:', verifyErr.message);
+        try {
+          const tokenInfoRes = await fetch(
+            `https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(credential)}`
+          );
+          if (!tokenInfoRes.ok) {
+            console.error('[Google tokeninfo failed]', await tokenInfoRes.text());
+            return res.status(401).json({ error: 'Invalid Google credential. Please try again.' });
+          }
+          const tokenInfo = await tokenInfoRes.json();
+          if (tokenInfo.aud !== env.GOOGLE_CLIENT_ID) {
+            console.error('[Google token audience mismatch]', tokenInfo.aud, '!=', env.GOOGLE_CLIENT_ID);
+            return res.status(401).json({ error: 'Google credential audience mismatch. Please try again.' });
+          }
+          payload = tokenInfo;
+        } catch (fallbackErr) {
+          console.error('[Google token verification fallback failed]', fallbackErr);
           return res.status(401).json({ error: 'Invalid Google credential. Please try again.' });
         }
-        const tokenInfo = await tokenInfoRes.json();
-        if (tokenInfo.aud !== env.GOOGLE_CLIENT_ID) {
-          console.error('[Google token audience mismatch]', tokenInfo.aud, '!=', env.GOOGLE_CLIENT_ID);
-          return res.status(401).json({ error: 'Google credential audience mismatch. Please try again.' });
+      }
+    } else if (access_token) {
+      // Verify Google OAuth2 access token via Google UserInfo API
+      try {
+        const userinfoRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+          headers: { Authorization: `Bearer ${access_token}` },
+        });
+        if (!userinfoRes.ok) {
+          console.error('[Google userinfo fetch failed]', await userinfoRes.text());
+          return res.status(401).json({ error: 'Invalid or expired Google access token. Please try again.' });
         }
-        payload = tokenInfo;
-      } catch (fallbackErr) {
-        console.error('[Google token verification fallback failed]', fallbackErr);
-        return res.status(401).json({ error: 'Invalid Google credential. Please try again.' });
+        payload = await userinfoRes.json();
+      } catch (err) {
+        console.error('[Google userinfo network error]', err);
+        return res.status(401).json({ error: 'Failed to verify Google access token. Please try again.' });
       }
     }
 
