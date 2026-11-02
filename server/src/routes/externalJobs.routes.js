@@ -1,9 +1,10 @@
 const express = require('express');
+const requireAuth = require('../middleware/requireAuth');
 const externalJobsController = require('../controllers/externalJobs.controller');
 
 const router = express.Router();
 
-// External jobs proxy route - available for all visitors with optional auth
-router.get('/', externalJobsController.searchExternalJobs);
+// Protected external jobs proxy route - login required to access search API
+router.get('/', requireAuth, externalJobsController.searchExternalJobs);
 
 module.exports = router;

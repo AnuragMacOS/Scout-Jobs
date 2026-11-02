@@ -1,9 +1,8 @@
 const axios = require('axios');
 const env = require('../config/env');
 
-// In-memory cache to preserve RapidAPI free quota and deliver sub-millisecond responses
 const searchCache = new Map();
-const CACHE_TTL_MS = 15 * 60 * 1000; // 15 minutes
+const CACHE_TTL_MS = 12 * 60 * 60 * 1000; // 12 hours (protects monthly RapidAPI quota)
 
 // Curated high-fidelity listings across India when API quota is exhausted or rate-limited
 const SAMPLE_EXTERNAL_JOBS = [
@@ -178,19 +177,38 @@ const SAMPLE_EXTERNAL_JOBS = [
 ];
 
 async function searchExternalJobs(req, res) {
-  const { q = 'Software Engineer in India', page = 1, type, remote, datePosted, freshers } = req.query;
+  const {
+    q = 'Software Engineer',
+    page = 1,
+    type,
+    remote,
+    datePosted,
+    freshers,
+    international,
+    country,
+    refresh,
+  } = req.query;
+
+  const isInternational = international === 'true';
+  const targetCountry = (country || '').trim().toLowerCase();
+  const pageNum = Math.max(1, parseInt(page, 10) || 1);
+  const forceRefresh = refresh === 'true';
 
   const rawQuery = (q || 'Software Engineer').trim();
-  const cacheKey = `${rawQuery.toLowerCase()}:${remote || 'false'}:${type || 'all'}:${datePosted || 'all'}:${freshers || 'false'}:${page}`;
+  const cacheKey = `${rawQuery.toLowerCase()}:${remote || 'false'}:${type || 'all'}:${datePosted || 'all'}:${freshers || 'false'}:${isInternational}:${targetCountry}:${pageNum}`;
 
-  // 1. Check in-memory cache first to save RapidAPI quota and speed up duplicate queries
-  const cached = searchCache.get(cacheKey);
-  if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
-    return res.json({
-      source: 'jsearch-live',
-      cached: true,
-      data: cached.data,
-    });
+  // 1. Check in-memory cache first to save RapidAPI quota and speed up duplicate queries (unless force refresh is requested)
+  if (!forceRefresh) {
+    const cached = searchCache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+      return res.json({
+        source: 'jsearch-live',
+        cached: true,
+        page: pageNum,
+        hasMore: cached.data.length >= 10,
+        data: cached.data,
+      });
+    }
   }
 
   // 2. Query RapidAPI JSearch if key is present
@@ -198,30 +216,64 @@ async function searchExternalJobs(req, res) {
     let queryStr = rawQuery;
     const lower = queryStr.toLowerCase();
 
-    // Ensure query targets India location if not already specified
-    const hasIndiaKeyword = [
-      'india', 'bengaluru', 'bangalore', 'hyderabad', 'pune',
-      'mumbai', 'delhi', 'noida', 'gurgaon', 'gurugram', 'chennai', 'kolkata', 'kochi'
-    ].some((loc) => lower.includes(loc));
+    const COUNTRY_NAMES = {
+      au: 'Australia',
+      jp: 'Japan',
+      gb: 'United Kingdom',
+      de: 'Germany',
+      us: 'United States',
+      ca: 'Canada',
+      sg: 'Singapore',
+    };
 
-    if (!hasIndiaKeyword) {
-      queryStr += ' in India';
+    // If international with a target country, include the country name in the query for accurate Google indexing
+    if (isInternational) {
+      if (targetCountry && targetCountry !== 'all' && COUNTRY_NAMES[targetCountry]) {
+        const cName = COUNTRY_NAMES[targetCountry];
+        if (!lower.includes(cName.toLowerCase())) {
+          queryStr += ` in ${cName}`;
+        }
+      }
+    } else {
+      // Domestic India search: force India location if not specified
+      const hasIndiaKeyword = [
+        'india', 'bengaluru', 'bangalore', 'hyderabad', 'pune',
+        'mumbai', 'delhi', 'noida', 'gurgaon', 'gurugram', 'chennai', 'kolkata', 'kochi'
+      ].some((loc) => lower.includes(loc));
+
+      if (!hasIndiaKeyword) {
+        queryStr += ' in India';
+      }
     }
+
     if (remote === 'true') {
       queryStr += ' remote';
     }
     if (freshers === 'true' && !lower.includes('fresher') && !lower.includes('entry') && !lower.includes('intern') && !lower.includes('graduate')) {
-      queryStr += ' fresher entry level';
+      if (isInternational) {
+        queryStr += ' entry level';
+      } else {
+        queryStr += ' fresher entry level';
+      }
+    }
+
+    // Determine country code for JSearch API
+    let jsearchCountry = 'in'; // default for India
+    if (isInternational) {
+      if (targetCountry && targetCountry !== 'all') {
+        jsearchCountry = targetCountry;
+      } else {
+        jsearchCountry = undefined; // search globally
+      }
     }
 
     const params = {
       query: queryStr,
-      page: Number(page) || 1,
+      page: pageNum,
       num_pages: 1,
       employment_types: type || undefined,
       date_posted: datePosted && datePosted !== 'all' ? datePosted : 'all',
-      country: 'in',
-      job_requirements: freshers === 'true' ? 'no_experience' : undefined,
+      country: jsearchCountry,
     };
 
     const headers = {
@@ -233,7 +285,7 @@ async function searchExternalJobs(req, res) {
       const response = await axios.get('https://jsearch.p.rapidapi.com/search-v2', {
         params,
         headers,
-        timeout: 12000,
+        timeout: 15000,
       });
 
       const rawList = Array.isArray(response.data?.data)
@@ -244,32 +296,56 @@ async function searchExternalJobs(req, res) {
         ? response.data.jobs
         : [];
 
-      // Filter to keep India results (or jobs without specified country)
-      const liveData = rawList.filter((job) => {
-        if (!job.job_country) return true;
-        const country = job.job_country.toUpperCase();
-        return country === 'IN' || country === 'INDIA';
+      // Filter results: if international with specific country, filter by that country
+      const liveData = isInternational
+        ? (targetCountry && targetCountry !== 'all'
+            ? rawList.filter((job) => {
+                if (!job.job_country) return true;
+                return job.job_country.toLowerCase() === targetCountry;
+              })
+            : rawList)
+        : rawList.filter((job) => {
+            if (!job.job_country) return true;
+            const c = job.job_country.toUpperCase();
+            return c === 'IN' || c === 'INDIA';
+          });
+
+      // Cache result in memory
+      searchCache.set(cacheKey, {
+        timestamp: Date.now(),
+        data: liveData,
       });
 
-      const finalJobs = liveData.length > 0 ? liveData : rawList;
-
-      if (finalJobs.length > 0) {
-        // Cache result in memory
-        searchCache.set(cacheKey, {
-          timestamp: Date.now(),
-          data: finalJobs,
-        });
-
-        return res.json({
-          source: 'jsearch-live',
-          data: finalJobs,
-        });
-      }
+      return res.json({
+        source: 'jsearch-live',
+        page: pageNum,
+        hasMore: liveData.length >= 10,
+        data: liveData,
+      });
     } catch (err) {
       const msg = err.response?.data?.message || err.message;
       console.warn(`[JSearch API] Failed (${err.response?.status || 'network'}):`, msg);
-      // Fall through to curated fallback listings gracefully
+
+      // If international search failed or timed out, return empty results — NEVER dump India fallback jobs!
+      if (isInternational || (targetCountry && targetCountry !== 'all')) {
+        return res.json({
+          source: 'jsearch-live',
+          page: pageNum,
+          hasMore: false,
+          data: [],
+        });
+      }
     }
+  }
+
+  // If international, never use curated India fallback
+  if (isInternational || (targetCountry && targetCountry !== 'all')) {
+    return res.json({
+      source: 'jsearch-live',
+      page: pageNum,
+      hasMore: false,
+      data: [],
+    });
   }
 
   // 3. Robust Curated Fallback (Guaranteed to return relevant tech jobs across India)
@@ -341,6 +417,8 @@ async function searchExternalJobs(req, res) {
 
   res.json({
     source: 'curated-preview',
+    page: pageNum,
+    hasMore: false,
     data: results,
   });
 }
